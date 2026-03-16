@@ -1,0 +1,234 @@
+import { motion } from 'motion/react';
+import { useEffect, useState, useRef } from 'react';
+
+interface EchoTextProps {
+  text: string;
+  severity: 'info' | 'warning' | 'critical';
+  animHint?: 'steady' | 'type_on' | 'blink_slow' | 'pulse_soft' | 'pulse_hard' | 'glitch_soft';
+  delay?: number;
+  className?: string;
+}
+
+const severityColors = {
+  info: '#E9E9E4',
+  warning: '#F3B643',
+  critical: '#F83D3D',
+};
+
+const severityGlow = {
+  info: 'rgba(233, 233, 228, 0.3)',
+  warning: 'rgba(243, 182, 67, 0.4)',
+  critical: 'rgba(248, 61, 61, 0.5)',
+};
+
+export function EchoText({ text, severity, animHint = 'steady', delay = 0, className = '' }: EchoTextProps) {
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTyping, setIsTyping] = useState(animHint === 'type_on');
+  const elementRef = useRef<HTMLDivElement>(null);
+  const [echoOffset, setEchoOffset] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (animHint === 'type_on') {
+      let currentIndex = 0;
+      const typeTimeout = setTimeout(() => {
+        const interval = setInterval(() => {
+          if (currentIndex <= text.length) {
+            setDisplayedText(text.slice(0, currentIndex));
+            currentIndex++;
+          } else {
+            clearInterval(interval);
+            setIsTyping(false);
+          }
+        }, Math.random() * 20 + 20); // 20-40ms random
+
+        return () => clearInterval(interval);
+      }, delay);
+
+      return () => clearTimeout(typeTimeout);
+    } else {
+      const timeout = setTimeout(() => {
+        setDisplayedText(text);
+      }, delay);
+      return () => clearTimeout(timeout);
+    }
+  }, [text, animHint, delay]);
+
+  useEffect(() => {
+    const updateEchoOffset = () => {
+      if (!elementRef.current) return;
+
+      const rect = elementRef.current.getBoundingClientRect();
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const elementCenterX = rect.left + rect.width / 2;
+      const elementCenterY = rect.top + rect.height / 2;
+
+      // Calculate distance from center
+      const distanceX = elementCenterX - centerX;
+      const distanceY = elementCenterY - centerY;
+      const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+
+      // Normalize and scale - farther from center = stronger pull
+      const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY);
+      const pullStrength = (distance / maxDistance) * 12; // max 12px offset
+
+      // Direction toward center (normalized)
+      const angle = Math.atan2(distanceY, distanceX);
+      const pullX = -Math.cos(angle) * pullStrength;
+      const pullY = -Math.sin(angle) * pullStrength;
+
+      setEchoOffset({ x: pullX, y: pullY });
+    };
+
+    updateEchoOffset();
+    
+    // Update on scroll and resize
+    window.addEventListener('resize', updateEchoOffset);
+    window.addEventListener('scroll', updateEchoOffset);
+    
+    // Also update periodically for parallax movement
+    const interval = setInterval(updateEchoOffset, 100);
+    
+    return () => {
+      window.removeEventListener('resize', updateEchoOffset);
+      window.removeEventListener('scroll', updateEchoOffset);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const color = severityColors[severity];
+  const glow = severityGlow[severity];
+
+  const baseVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+  };
+
+  const pulseVariants = {
+    pulse: {
+      opacity: [1, 0.6, 1],
+      textShadow: [
+        `0 0 10px ${glow}, 0 0 20px ${glow}`,
+        `0 0 15px ${glow}, 0 0 30px ${glow}`,
+        `0 0 10px ${glow}, 0 0 20px ${glow}`,
+      ],
+    },
+  };
+
+  const blinkVariants = {
+    blink: {
+      opacity: [1, 0.3, 1],
+    },
+  };
+
+  const getAnimation = () => {
+    switch (animHint) {
+      case 'pulse_soft':
+        return {
+          animate: 'pulse',
+          variants: pulseVariants,
+          transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+        };
+      case 'pulse_hard':
+        return {
+          animate: 'pulse',
+          variants: pulseVariants,
+          transition: { duration: 1, repeat: Infinity, ease: 'easeInOut' },
+        };
+      case 'blink_slow':
+        return {
+          animate: 'blink',
+          variants: blinkVariants,
+          transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+        };
+      case 'glitch_soft':
+        return {
+          animate: {
+            x: [0, -2, 2, -1, 1, 0],
+            opacity: [1, 0.8, 1, 0.9, 1],
+          },
+          transition: {
+            duration: 0.3,
+            repeat: Infinity,
+            repeatDelay: 3,
+            ease: 'easeInOut',
+          },
+        };
+      default:
+        return {};
+    }
+  };
+
+  const textDisplay = animHint === 'type_on' ? displayedText : text;
+
+  return (
+    <div ref={elementRef} className={`relative inline-block ${className}`}>
+      {/* Echo layers - появляются вместе с текстом */}
+      {textDisplay && (
+        <>
+          {/* Layer 1 - closest */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.25 }}
+            transition={{ duration: 0.3, delay: delay / 1000 }}
+            className="absolute top-0 left-0 pointer-events-none select-none whitespace-pre-wrap"
+            style={{
+              color: color,
+              transform: `translate(${echoOffset.x * 0.5}px, ${echoOffset.y * 0.5}px)`,
+              filter: 'blur(1px)',
+            }}
+          >
+            {textDisplay}
+          </motion.div>
+          
+          {/* Layer 2 - middle */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.2 }}
+            transition={{ duration: 0.3, delay: delay / 1000 }}
+            className="absolute top-0 left-0 pointer-events-none select-none whitespace-pre-wrap"
+            style={{
+              color: color,
+              transform: `translate(${echoOffset.x}px, ${echoOffset.y}px)`,
+              filter: 'blur(2px)',
+            }}
+          >
+            {textDisplay}
+          </motion.div>
+          
+          {/* Layer 3 - farthest */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.12 }}
+            transition={{ duration: 0.3, delay: delay / 1000 }}
+            className="absolute top-0 left-0 pointer-events-none select-none whitespace-pre-wrap"
+            style={{
+              color: color,
+              transform: `translate(${echoOffset.x * 1.8}px, ${echoOffset.y * 1.8}px)`,
+              filter: 'blur(4px)',
+            }}
+          >
+            {textDisplay}
+          </motion.div>
+        </>
+      )}
+
+      {/* Main text */}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={baseVariants}
+        transition={{ duration: 0.3, delay: delay / 1000 }}
+        {...getAnimation()}
+        className="relative whitespace-pre-wrap"
+        style={{
+          color: color,
+          textShadow: `0 0 10px ${glow}, 0 0 20px ${glow}`,
+        }}
+      >
+        {textDisplay}
+        {isTyping && <span className="animate-pulse">_</span>}
+      </motion.div>
+    </div>
+  );
+}
