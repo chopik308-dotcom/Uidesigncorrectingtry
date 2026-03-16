@@ -63,7 +63,7 @@ export default function App() {
       </div>
 
       {/* Main content area with overscan */}
-      <div className="relative w-[120vw] h-[120vh] -ml-[10vw] -mt-[10vh]">
+      <div className="relative w-[132vw] h-[124vh] -ml-[16vw] -mt-[12vh]">
         <ParallaxContainer depth={0.5}>
           <div className="flex items-center justify-center min-h-screen px-12">
             <div key={currentScreenIndex} className="w-full max-w-4xl space-y-12">
@@ -142,9 +142,7 @@ export default function App() {
                               severity={line.severity}
                               animHint={line.animHint}
                               delay={sectionIndex * 200 + lineIndex * 150}
-                              className={`text-lg font-mono leading-relaxed ${
-                                section.name === 'Actions' ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
-                              }`}
+                              className="text-lg font-mono leading-relaxed"
                             />
                           </div>
                         );
