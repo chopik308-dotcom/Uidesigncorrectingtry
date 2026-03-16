@@ -3,11 +3,29 @@ import { useState, useEffect } from 'react';
 
 export function CustomCursor() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    const setPosition = (x: number, y: number) => {
+      setMousePosition({ x, y });
+      setIsVisible(true);
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      setPosition(e.clientX, e.clientY);
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+      setPosition(e.clientX, e.clientY);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      setPosition(touch.clientX, touch.clientY);
+    };
+
+    const handleMouseEnter = () => {
       setIsVisible(true);
     };
 
@@ -15,12 +33,20 @@ export function CustomCursor() {
       setIsVisible(false);
     };
 
+    setPosition(window.innerWidth / 2, window.innerHeight / 2);
+
+    window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseleave', handleMouseLeave);
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.documentElement.addEventListener('mouseenter', handleMouseEnter);
+    document.documentElement.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('touchstart', handleTouchStart);
+      document.documentElement.removeEventListener('mouseenter', handleMouseEnter);
+      document.documentElement.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, []);
 
@@ -41,6 +67,8 @@ export function CustomCursor() {
           stiffness: 400,
         }}
         style={{
+          top: 0,
+          left: 0,
           width: 16,
           height: 16,
           border: '1px solid #E9E9E4',
@@ -62,6 +90,8 @@ export function CustomCursor() {
           stiffness: 200,
         }}
         style={{
+          top: 0,
+          left: 0,
           width: 8,
           height: 8,
           backgroundColor: '#49D0D0',
