@@ -5,7 +5,7 @@ interface ParallaxContainerProps {
   depth?: number;
 }
 
-const MAX_OFFSET_PX = 20;
+const MAX_OFFSET_PX = 22;
 const LERP_FACTOR = 0.12;
 const RESIZE_SETTLE_MS = 180;
 
