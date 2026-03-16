@@ -7,6 +7,7 @@ interface EchoTextProps {
   animHint?: 'steady' | 'type_on' | 'blink_slow' | 'pulse_soft' | 'pulse_hard' | 'glitch_soft';
   delay?: number;
   className?: string;
+  lcdEffect?: boolean;
 }
 
 const severityColors = {
@@ -21,7 +22,14 @@ const severityGlow = {
   critical: 'rgba(248, 61, 61, 0.5)',
 };
 
-export function EchoText({ text, severity, animHint = 'steady', delay = 0, className = '' }: EchoTextProps) {
+export function EchoText({
+  text,
+  severity,
+  animHint = 'steady',
+  delay = 0,
+  className = '',
+  lcdEffect = true,
+}: EchoTextProps) {
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(animHint === 'type_on');
   const elementRef = useRef<HTMLDivElement>(null);
@@ -166,6 +174,38 @@ export function EchoText({ text, severity, animHint = 'steady', delay = 0, class
       {/* Echo layers - появляются вместе с текстом */}
       {textDisplay && (
         <>
+          {/* LCD ghost - vertical afterimage */}
+          {lcdEffect && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.14 }}
+                transition={{ duration: 0.35, delay: delay / 1000 }}
+                className="absolute top-0 left-0 pointer-events-none select-none whitespace-pre-wrap"
+                style={{
+                  color,
+                  transform: `translate(${echoOffset.x * 0.4}px, ${echoOffset.y * 0.8 + 6}px)`,
+                  filter: 'blur(0.4px)',
+                }}
+              >
+                {textDisplay}
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.08 }}
+                transition={{ duration: 0.35, delay: delay / 1000 }}
+                className="absolute top-0 left-0 pointer-events-none select-none whitespace-pre-wrap"
+                style={{
+                  color,
+                  transform: `translate(${echoOffset.x * 0.6}px, ${echoOffset.y * 1.1 + 11}px)`,
+                  filter: 'blur(1.4px)',
+                }}
+              >
+                {textDisplay}
+              </motion.div>
+            </>
+          )}
+
           {/* Layer 1 - closest */}
           <motion.div
             initial={{ opacity: 0 }}
