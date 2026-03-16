@@ -5,7 +5,7 @@ interface ParallaxContainerProps {
   depth?: number;
 }
 
-const MAX_OFFSET_PX = 22;
+const MAX_OFFSET_PX = 44;
 const LERP_FACTOR = 0.12;
 const RESIZE_SETTLE_MS = 180;
 
@@ -30,8 +30,9 @@ export function ParallaxContainer({ children, depth = 1 }: ParallaxContainerProp
       const normalizedX = (pointerRef.current.x - width / 2) / width;
       const normalizedY = (pointerRef.current.y - height / 2) / height;
 
-      targetRef.current.x = normalizedX * depth * MAX_OFFSET_PX;
-      targetRef.current.y = normalizedY * depth * MAX_OFFSET_PX;
+      // Inverted response: moving mouse toward an edge reveals more of that direction in the scene.
+      targetRef.current.x = -normalizedX * depth * MAX_OFFSET_PX;
+      targetRef.current.y = -normalizedY * depth * MAX_OFFSET_PX;
     };
 
     const applyTransform = () => {
