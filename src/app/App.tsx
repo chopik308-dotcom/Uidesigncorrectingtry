@@ -34,7 +34,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden cursor-none" style={{ backgroundColor: '#030507' }}>
+    <div className="relative w-full min-h-screen overflow-hidden" style={{ backgroundColor: '#030507' }}>
       <GridOverlay />
       <Scanlines />
       <NoiseTexture />
