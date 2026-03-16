@@ -142,9 +142,7 @@ export default function App() {
                               severity={line.severity}
                               animHint={line.animHint}
                               delay={sectionIndex * 200 + lineIndex * 150}
-                              className={`text-lg font-mono leading-relaxed ${
-                                section.name === 'Actions' ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
-                              }`}
+                              className="text-lg font-mono leading-relaxed"
                             />
                           </div>
                         );
