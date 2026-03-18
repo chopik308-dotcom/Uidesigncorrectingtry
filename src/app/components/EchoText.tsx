@@ -7,21 +7,48 @@ interface EchoTextProps {
   animHint?: 'steady' | 'type_on' | 'blink_slow' | 'pulse_soft' | 'pulse_hard' | 'glitch_soft';
   delay?: number;
   className?: string;
+  lcdEffect?: boolean;
+  palette?: 'default' | 'cold';
 }
 
 const severityColors = {
-  info: '#E9E9E4',
-  warning: '#F3B643',
-  critical: '#F83D3D',
+  default: {
+    info: '#E9E9E4',
+    warning: '#F3B643',
+    critical: '#F83D3D',
+  },
+  cold: {
+    info: '#F2F7FF',
+    warning: '#F3B643',
+    critical: '#F83D3D',
+  },
 };
 
 const severityGlow = {
-  info: 'rgba(233, 233, 228, 0.3)',
-  warning: 'rgba(243, 182, 67, 0.4)',
-  critical: 'rgba(248, 61, 61, 0.5)',
+  default: {
+    info: 'rgba(233, 233, 228, 0.3)',
+    warning: 'rgba(243, 182, 67, 0.4)',
+    critical: 'rgba(248, 61, 61, 0.5)',
+  },
+  cold: {
+    info: 'rgba(242, 247, 255, 0.32)',
+    warning: 'rgba(243, 182, 67, 0.4)',
+    critical: 'rgba(248, 61, 61, 0.5)',
+  },
 };
 
-export function EchoText({ text, severity, animHint = 'steady', delay = 0, className = '' }: EchoTextProps) {
+const ECHO_DEAD_ZONE_PX = 180;
+const ECHO_MAX_OFFSET_PX = 14;
+
+export function EchoText({
+  text,
+  severity,
+  animHint = 'steady',
+  delay = 0,
+  className = '',
+  lcdEffect = true,
+  palette = 'default',
+}: EchoTextProps) {
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(animHint === 'type_on');
   const elementRef = useRef<HTMLDivElement>(null);
@@ -68,9 +95,16 @@ export function EchoText({ text, severity, animHint = 'steady', delay = 0, class
       const distanceY = elementCenterY - centerY;
       const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
 
-      // Normalize and scale - farther from center = stronger pull
+      // No echo pull in the central read-safe zone.
+      if (distance <= ECHO_DEAD_ZONE_PX) {
+        setEchoOffset({ x: 0, y: 0 });
+        return;
+      }
+
+      // Farther from center = stronger pull toward center, with a dead zone.
       const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY);
-      const pullStrength = (distance / maxDistance) * 12; // max 12px offset
+      const normalizedDistance = (distance - ECHO_DEAD_ZONE_PX) / Math.max(maxDistance - ECHO_DEAD_ZONE_PX, 1);
+      const pullStrength = Math.min(Math.max(normalizedDistance, 0), 1) * ECHO_MAX_OFFSET_PX;
 
       // Direction toward center (normalized)
       const angle = Math.atan2(distanceY, distanceX);
@@ -81,23 +115,25 @@ export function EchoText({ text, severity, animHint = 'steady', delay = 0, class
     };
 
     updateEchoOffset();
-    
+
     // Update on scroll and resize
     window.addEventListener('resize', updateEchoOffset);
     window.addEventListener('scroll', updateEchoOffset);
-    
-    // Also update periodically for parallax movement
-    const interval = setInterval(updateEchoOffset, 100);
-    
+
+    let frameId = window.requestAnimationFrame(function tick() {
+      updateEchoOffset();
+      frameId = window.requestAnimationFrame(tick);
+    });
+
     return () => {
       window.removeEventListener('resize', updateEchoOffset);
       window.removeEventListener('scroll', updateEchoOffset);
-      clearInterval(interval);
+      window.cancelAnimationFrame(frameId);
     };
   }, []);
 
-  const color = severityColors[severity];
-  const glow = severityGlow[severity];
+  const color = severityColors[palette][severity];
+  const glow = severityGlow[palette][severity];
 
   const baseVariants = {
     hidden: { opacity: 0 },
@@ -166,6 +202,38 @@ export function EchoText({ text, severity, animHint = 'steady', delay = 0, class
       {/* Echo layers - появляются вместе с текстом */}
       {textDisplay && (
         <>
+          {/* LCD ghost - vertical afterimage */}
+          {lcdEffect && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.14 }}
+                transition={{ duration: 0.35, delay: delay / 1000 }}
+                className="absolute top-0 left-0 pointer-events-none select-none whitespace-pre-wrap"
+                style={{
+                  color,
+                  transform: `translate(${echoOffset.x * 0.4}px, ${echoOffset.y * 0.8 + 6}px)`,
+                  filter: 'blur(0.4px)',
+                }}
+              >
+                {textDisplay}
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.08 }}
+                transition={{ duration: 0.35, delay: delay / 1000 }}
+                className="absolute top-0 left-0 pointer-events-none select-none whitespace-pre-wrap"
+                style={{
+                  color,
+                  transform: `translate(${echoOffset.x * 0.6}px, ${echoOffset.y * 1.1 + 11}px)`,
+                  filter: 'blur(1.4px)',
+                }}
+              >
+                {textDisplay}
+              </motion.div>
+            </>
+          )}
+
           {/* Layer 1 - closest */}
           <motion.div
             initial={{ opacity: 0 }}

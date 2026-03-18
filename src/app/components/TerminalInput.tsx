@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 interface TerminalInputProps {
   placeholder?: string;
@@ -9,7 +9,6 @@ interface TerminalInputProps {
 export function TerminalInput({ placeholder = '', onSubmit }: TerminalInputProps) {
   const [value, setValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -44,19 +43,30 @@ export function TerminalInput({ placeholder = '', onSubmit }: TerminalInputProps
 
         {/* Input field */}
         <input
-          ref={inputRef}
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder={placeholder}
           className="relative w-full bg-transparent px-4 py-3 font-mono text-lg outline-none"
           style={{
             color: '#E9E9E4',
             caretColor: '#F83D3D',
           }}
         />
+
+        {/* Placeholder text styled as part of the field layer */}
+        {!value && !isFocused && (
+          <motion.div
+            initial={{ opacity: 0, y: 2 }}
+            animate={{ opacity: 0.4, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.12 }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none font-mono text-lg"
+            style={{ color: '#A6B0B9' }}
+          >
+            {placeholder}
+          </motion.div>
+        )}
 
         {/* Cursor blink when empty and focused */}
         {!value && isFocused && (
@@ -67,16 +77,6 @@ export function TerminalInput({ placeholder = '', onSubmit }: TerminalInputProps
           />
         )}
       </motion.div>
-
-      {/* Placeholder text styled */}
-      {!value && !isFocused && (
-        <div
-          className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none font-mono text-lg opacity-40"
-          style={{ color: '#A6B0B9' }}
-        >
-          {placeholder}
-        </div>
-      )}
     </div>
   );
 }
