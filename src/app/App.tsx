@@ -23,15 +23,21 @@ export default function App() {
       } else if (e.key === 'ArrowLeft') {
         setDirection(-1);
         setCurrentScreenIndex((prev) => (prev - 1 + screens.length) % screens.length);
-      } else if (e.key >= '1' && e.key <= '4') {
-        setDirection(0);
-        setCurrentScreenIndex(parseInt(e.key) - 1);
+      } else if (/^[1-9]$/.test(e.key)) {
+        const targetIndex = parseInt(e.key, 10) - 1;
+        if (targetIndex >= 0 && targetIndex < screens.length) {
+          setDirection(0);
+          setCurrentScreenIndex(targetIndex);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
+
+  const isWelcomeScreen = currentScreen.id === 'access-gateway';
+  const jumpHint = `1-${screens.length} JUMP`;
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden" style={{ backgroundColor: '#030507' }}>
@@ -44,7 +50,7 @@ export default function App() {
       {/* Navigation hints */}
       <div className="fixed top-6 right-6 z-40 flex gap-4 opacity-30 hover:opacity-60 transition-opacity">
         <EchoText text="← / → NAVIGATE" severity="info" animHint="steady" className="text-xs font-mono" />
-        <EchoText text="1-4 JUMP" severity="info" animHint="steady" className="text-xs font-mono" />
+        <EchoText text={jumpHint} severity="info" animHint="steady" className="text-xs font-mono" />
       </div>
 
       {/* Screen indicator */}
@@ -63,16 +69,34 @@ export default function App() {
       </div>
 
       {/* Main content area with overscan */}
-      <div className="relative w-[120vw] h-[120vh] -ml-[10vw] -mt-[10vh]">
+      <div className="relative w-[132vw] h-[124vh] -ml-[16vw] -mt-[12vh]">
         <ParallaxContainer depth={0.5}>
           <div className="flex items-center justify-center min-h-screen px-12">
-            <div key={currentScreenIndex} className="w-full max-w-4xl space-y-12">
+            <div key={`${currentScreenIndex}-${direction}`} className="w-full max-w-4xl space-y-12">
               {/* Title */}
-              <div className="mb-16">
+              <div className="mb-16 relative inline-block">
+                {isWelcomeScreen && (
+                  <>
+                    <div
+                      className="absolute top-0 left-0 pointer-events-none select-none whitespace-pre-wrap text-4xl font-mono tracking-wider"
+                      style={{ color: 'rgba(242, 247, 255, 0.17)', transform: 'translate(1px, 4px)' }}
+                    >
+                      {currentScreen.title}
+                    </div>
+                    <div
+                      className="absolute top-0 left-0 pointer-events-none select-none whitespace-pre-wrap text-4xl font-mono tracking-wider"
+                      style={{ color: 'rgba(248, 61, 61, 0.2)', transform: 'translate(4px, -3px)' }}
+                    >
+                      {currentScreen.title}
+                    </div>
+                  </>
+                )}
+
                 <EchoText
                   text={currentScreen.title}
                   severity="info"
                   animHint="steady"
+                  palette={isWelcomeScreen ? 'cold' : 'default'}
                   className="text-4xl font-mono tracking-wider"
                 />
               </div>
@@ -87,6 +111,7 @@ export default function App() {
                         text={`// ${section.name.toUpperCase()}`}
                         severity="info"
                         animHint="steady"
+                        palette={isWelcomeScreen ? 'cold' : 'default'}
                         delay={sectionIndex * 100}
                         className="text-sm font-mono tracking-widest"
                       />
@@ -99,10 +124,45 @@ export default function App() {
                         if (currentScreen.id === 'session-anchor' && section.name === 'Primary' && line.key === 'PLACEHOLDER') {
                           return (
                             <div key={line.key} className="mt-6 mb-6">
-                              <TerminalInput
-                                placeholder={line.text}
-                                onSubmit={(value) => console.log('Submitted:', value)}
+                              <TerminalInput placeholder={line.text} onSubmit={(value) => console.log('Submitted:', value)} />
+                            </div>
+                          );
+                        }
+
+                        // Intake drop/paste zone for raw context
+                        if (currentScreen.id === 'raw-intake' && line.key === 'DROPZONE') {
+                          return (
+                            <div
+                              key={line.key}
+                              className="relative mt-5 mb-5 border px-6 py-6"
+                              style={{
+                                borderColor: 'rgba(242, 247, 255, 0.24)',
+                                boxShadow: 'inset 0 0 24px rgba(242, 247, 255, 0.06), 0 0 18px rgba(248, 61, 61, 0.14)',
+                              }}
+                            >
+                              <EchoText
+                                text="[ DRAG / DROP / PASTE ]"
+                                severity="critical"
+                                animHint="pulse_soft"
+                                palette="cold"
+                                className="text-xl font-mono tracking-wider"
                               />
+                              <div className="mt-4 space-y-2 opacity-80">
+                                <EchoText
+                                  text="TELEGRAM_EXPORT.ZIP // WHATSAPP_EXPORT.TXT // NOTES_ARCHIVE.MD"
+                                  severity="info"
+                                  animHint="steady"
+                                  palette="cold"
+                                  className="text-sm font-mono"
+                                />
+                                <EchoText
+                                  text="RAW INTAKE ONLY :: CLEANING + FILTERING RUNS AFTER SUBMIT"
+                                  severity="warning"
+                                  animHint="steady"
+                                  palette="cold"
+                                  className="text-sm font-mono"
+                                />
+                              </div>
                             </div>
                           );
                         }
@@ -124,9 +184,9 @@ export default function App() {
                                     key={i}
                                     className="w-16 h-1"
                                     style={{
-                                      backgroundColor: i < parseInt(line.text) ? '#F83D3D' : '#A6B0B9',
-                                      opacity: i < parseInt(line.text) ? 0.8 : 0.2,
-                                      boxShadow: i < parseInt(line.text) ? '0 0 8px rgba(248, 61, 61, 0.5)' : 'none',
+                                      backgroundColor: i < parseInt(line.text, 10) ? '#F83D3D' : '#A6B0B9',
+                                      opacity: i < parseInt(line.text, 10) ? 0.8 : 0.2,
+                                      boxShadow: i < parseInt(line.text, 10) ? '0 0 8px rgba(248, 61, 61, 0.5)' : 'none',
                                     }}
                                   />
                                 ))}
@@ -141,10 +201,9 @@ export default function App() {
                               text={line.text}
                               severity={line.severity}
                               animHint={line.animHint}
+                              palette={isWelcomeScreen || currentScreen.id === 'raw-intake' ? 'cold' : 'default'}
                               delay={sectionIndex * 200 + lineIndex * 150}
-                              className={`text-lg font-mono leading-relaxed ${
-                                section.name === 'Actions' ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
-                              }`}
+                              className="text-lg font-mono leading-relaxed"
                             />
                           </div>
                         );
@@ -168,11 +227,12 @@ export default function App() {
 
       {/* Footer info */}
       <div className="fixed bottom-6 left-6 z-40 opacity-20">
-        <EchoText 
-          text={`SCREEN ${currentScreenIndex + 1}/${screens.length} // ${currentScreen.id.toUpperCase()}`} 
-          severity="info" 
-          animHint="steady" 
-          className="text-xs font-mono" 
+        <EchoText
+          text={`SCREEN ${currentScreenIndex + 1}/${screens.length} // ${currentScreen.id.toUpperCase()}`}
+          severity="info"
+          animHint="steady"
+          palette={isWelcomeScreen || currentScreen.id === 'raw-intake' ? 'cold' : 'default'}
+          className="text-xs font-mono"
         />
       </div>
 

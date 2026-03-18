@@ -18,6 +18,41 @@ export interface Screen {
 
 export const screens: Screen[] = [
   {
+    id: 'access-gateway',
+    title: 'ZERO ROOM // ACCESS ALIGNMENT',
+    sections: [
+      {
+        name: 'Handshake',
+        lines: [
+          { key: 'GREETING', text: 'WELCOME BACK TO THE LOCAL CONTEXT FIELD', severity: 'info', animHint: 'type_on' },
+          { key: 'SUBTITLE', text: 'ALIGN SIGNAL. AUTHORIZE EXISTING IDENTITY OR JOIN THE SYSTEM.', severity: 'info', animHint: 'steady' },
+        ],
+      },
+      {
+        name: 'Entry',
+        lines: [
+          { key: 'LOGIN', text: 'ENTER ACCOUNT :: RESTORE PERSONAL CONTEXT', severity: 'critical', animHint: 'pulse_hard' },
+          { key: 'JOIN', text: 'JOIN SYSTEM :: INITIALIZE NEW PERSONAL CONTEXT', severity: 'info', animHint: 'pulse_soft' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'raw-intake',
+    title: 'DATA INTAKE // RAW CONTEXT LOADER',
+    sections: [
+      {
+        name: 'Intake',
+        lines: [
+          { key: 'HEAD', text: 'DROP OR PASTE YOUR RAW CONTEXT EXPORTS', severity: 'info', animHint: 'type_on' },
+          { key: 'DROPZONE', text: 'DRAG AND DROP / PASTE RAW FILES HERE', severity: 'warning', animHint: 'steady' },
+          { key: 'SOURCES', text: 'SOURCES :: TELEGRAM EXPORT / WHATSAPP EXPORT / TXT ARCHIVE / NOTES', severity: 'info', animHint: 'steady' },
+          { key: 'PIPELINE', text: 'PIPELINE :: CLEANUP -> FILTERING -> DISTILLATION -> VECTOR PORTRAIT', severity: 'warning', animHint: 'type_on' },
+        ],
+      },
+    ],
+  },
+  {
     id: 'wake',
     title: 'ZERO ROOM // WAKE',
     sections: [
